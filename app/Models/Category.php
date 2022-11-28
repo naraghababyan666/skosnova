@@ -12,14 +12,14 @@ class Category extends Model
         'name', 'parent_id'
     ];
 
-    public function children()
+    public function child_category()
     {
-        return $this->hasMany(Category::class, 'parent_id', 'id')->with(["children"]);
+        return $this->hasMany(Category::class, 'parent_id', 'id')->with(["child_category"]);
 
     }
-    public function parent()
+    public function parent_category()
     {
-        return $this->belongsTo(Category::class, 'parent_id', 'id')->with(["parent"]);
+        return $this->belongsTo(Category::class, 'parent_id', 'id')->with(["parent_category"]);
 
     }
 

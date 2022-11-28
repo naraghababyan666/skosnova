@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\Console\Input\Input;
 
 class CategoryController extends Controller
 {
@@ -13,13 +15,35 @@ class CategoryController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories= Category::all();
-        if(!empty($categories)){
-            return response()->json(['categories' => $categories]);
+        $data = $request->all();
+        if(isset($data['includeProducts'])){
+            if($data['includeProducts'] == 1){
+                $categoryWithProduct = Category::query()->with('product')->get();
+                if(!empty($categoryWithProduct)){
+                    return response()->json(['success' => true, 'categories' => $categoryWithProduct]);
+                }
+                return response()->json(['success' => false, 'message' => 'Empty categories list']);
+            }else if($data['includeProducts'] == 0){
+                $categories= Category::all();
+                if(!empty($categories)){
+                    return response()->json(['success' => true, 'categories' => $categories]);
+                }
+                return response()->json(['success' => false, 'message' => 'Empty categories list']);
+            }else{
+                return response()->json(['success' => false, 'message' => 'Invalid query parameters']);
+
+            }
+        }else if(empty($data)){
+            $categories= Category::all();
+            if(!empty($categories)){
+                return response()->json(['success' => true, 'categories' => $categories]);
+            }
+            return response()->json(['success' => false, 'message' => 'Empty categories list']);
+        }else if(!isset($data['includeProducts'])){
+            return response()->json(['success' => false, 'message' => 'Invalid query parameters']);
         }
-        return response()->json(['message' => 'Empty categories list']);
     }
 
     /**
@@ -49,13 +73,36 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show($id, Request $request)
     {
-        $category = Category::query()->find($id);
-        if(!is_null($category)){
-            return response()->json(['success' => true, 'data' => $category]);
+        $data = $request->all();
+        if(isset($data['includeProducts'])){
+            if($data['includeProducts'] == 1){
+                $categoryCurrentWithProduct = Category::query()->where('id', $id)->with('product')->first();
+                if(!empty($categoryCurrentWithProduct)){
+                    return response()->json(['success' => true, 'categories' => $categoryCurrentWithProduct]);
+                }
+                return response()->json(['success' => false, 'message' => 'Category not found']);
+            }else if($data['includeProducts'] == 0){
+                $category = Category::query()->where('id', $id)->with('product')->first();
+                if(!is_null($category)){
+                    return response()->json(['success' => true, 'data' => $category]);
+                }
+                return response()->json(['success' => false, 'message' => 'Category not found']);
+            }else{
+                return response()->json(['success' => false, 'message' => 'Invalid query parameters']);
+
+            }
+        }else if(empty($data)){
+            $category = Category::query()->find($id);
+            if(!is_null($category)){
+                return response()->json(['success' => true, 'data' => $category]);
+            }
+            return response()->json(['success' => false, 'message' => 'Category not found']);
+        }else if(!isset($data['includeProducts'])){
+            return response()->json(['success' => false, 'message' => 'Invalid query parameters']);
         }
-        return response()->json(['success' => false, 'message' => 'Category not found']);
+
     }
 
     /**
@@ -83,9 +130,53 @@ class CategoryController extends Controller
         return response()->json(['success' => false, 'message' => 'Category not found']);
     }
 
-    public function getProducts($id){
-        $a = Category::query()->where('id', $id)->with('product')->get();
-        dd($a);
+    public function getProducts($id, Request $request){
+        $param = $request->all();
+        if(isset($param['includeChildren'])){
+            if($param['includeChildren'] == 1){
+                $categoriesWithChilds = Category::query()->with('child_category')->get();
+                $products = [];
+                foreach ($categoriesWithChilds as $item){
+                    if(!empty($item['child_category'])){
+                        foreach ($item['child_category'] as $child){
+                            $products[] = Product::query()->where('category_id', $child['id'])->get();
+                        }
+                        $item['products'] = $products;
+                    }
+                }
+                return response()->json(['a' => $categoriesWithChilds]);
+
+
+
+
+
+            }else if($param['includeChildren'] == 0){
+                $categories = Category::query()->where('id', $id)->with('product')->get();
+                if(count($categories) != 0){
+                    return response()->json(['success' => true, 'data' => $categories]);
+                }
+                return response()->json(['success' => false, 'message' => 'Empty category list']);
+            }else{
+                return response()->json(['success' => false, 'message' => 'Invalid query parameters']);
+
+            }
+        }else if(empty($param)){
+            $categories = Category::query()->where('id', $id)->with('product')->get();
+            if(count($categories) != 0){
+                return response()->json(['success' => true, 'data' => $categories]);
+            }
+            return response()->json(['success' => false, 'message' => 'Empty category list']);
+        }else if(!isset($param['includeChildren'])){
+            return response()->json(['success' => false, 'message' => 'Invalid query parameters']);
+        }
+
+
+
+
+
+
+
+
     }
 
 }
