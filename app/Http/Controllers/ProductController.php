@@ -17,7 +17,7 @@ class ProductController extends Controller
     public function index()
     {
         $products= Product::all();
-        if(!empty($categories)){
+        if(!empty($products)){
             return response()->json(['categories' => $products]);
         }
         return response()->json(['message' => 'Empty categories list']);
@@ -49,6 +49,8 @@ class ProductController extends Controller
         if($validated->errors()->count() == 0) {
             $newProduct = Product::query()->create($validated->validated());
             return response()->json(['success' => true, 'data' => $newProduct]);
+        }else{
+            return response()->json(['success' => false, 'message' => $validated->errors()]);
         }
         return response()->json(['success' => false, 'message' => 'Invalid data']);
     }
@@ -61,7 +63,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Category::query()->find($id);
+        $product = Product::query()->find($id);
         if(!is_null($product)){
             return response()->json(['success' => true, 'data' => $product]);
         }

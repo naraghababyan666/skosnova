@@ -62,6 +62,9 @@ class CategoryController extends Controller
         if($validated->errors()->count() == 0) {
             $newCategory = Category::query()->create($validated->validated());
             return response()->json(['success' => true, 'data' => $newCategory]);
+        }else{
+            return response()->json(['success' => true, 'data' => $validated->errors()]);
+
         }
         return response()->json(['success' => false, 'message' => 'Invalid data']);
 
@@ -134,12 +137,17 @@ class CategoryController extends Controller
         $param = $request->all();
         if(isset($param['includeChildren'])){
             if($param['includeChildren'] == 1){
-                $categoriesWithChilds = Category::query()->with('child_category')->get();
+                $categoriesWithChilds = Category::query()->where('id', $id)->with('child_category')->get();
                 $products = [];
                 foreach ($categoriesWithChilds as $item){
                     if(!empty($item['child_category'])){
                         foreach ($item['child_category'] as $child){
-                            $products[] = Product::query()->where('category_id', $child['id'])->get();
+                            $productByChildId = Product::query()->where('category_id', $child['id'])->get();
+                            if(count($productByChildId) != 0){
+                                foreach ($productByChildId as $prod){
+                                    $products[] = $prod;
+                                }
+                            }
                         }
                         $item['products'] = $products;
                     }
